@@ -1,0 +1,371 @@
+Red Wine Analysis by Fahad Khan
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+
+library(ggplot2)
+library(gridExtra)
+library(GGally)
+library(dplyr)
+library(RColorBrewer)
+```
+
+```{r echo=FALSE, Load_the_Data}
+## Load the Data
+list.files()
+getwd()
+setwd('C:/Users/Fahad/OneDrive/Desktop/Udacity - Data Analyst Nanodegree/P6 - EDA')
+rw <- read.csv('wineQualityReds.csv')
+names(rw)
+```
+
+## Red Wine Dataset
+
+This tidy data set contains 1,599 red wines with 11 variables on the chemical properties of the wine. At least 3 wine experts rated the quality of each wine, providing a rating between 0 (very bad) and 10 (very excellent). I am trying to assess which chemical properties influence the quality of red wines.
+
+
+## Structure and summary of data
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+str(rw)
+summary(rw)
+table(rw$quality)*100/max(rw$X) #percentage of wine count by quality
+
+rw$dquality <- factor(rw$quality)
+#Convert quality into categorical variable called dquality
+```
+
+The outcome variable (quality) is an integer with a min value of 3 and max value of 8. The other attributes are of the type numeric. Among these, only the free and total sulfur-dioxide seem to have values which are whole numbers, while the remaining are decimal
+
+Around 95% of the wines are rated between 5-7
+
+------
+
+> Univariate Plots Section
+
+## Histogram for each variable
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+
+P0 = ggplot(aes(x = quality), data = rw) + geom_histogram(binwidth = .5)
+P1 = ggplot(aes(x = sulphates), data = rw) + geom_histogram()
+P2 = ggplot(aes(x = fixed.acidity), data = rw) + geom_histogram()
+P3 = ggplot(aes(x = volatile.acidity), data = rw) + geom_histogram()
+P4 = ggplot(aes(x = citric.acid), data = rw) + geom_histogram()
+P5 = ggplot(aes(x = residual.sugar), data = rw) + geom_histogram()
+P6 = ggplot(aes(x = chlorides), data = rw) + geom_histogram()
+P7 = ggplot(aes(x = free.sulfur.dioxide), data = rw) + geom_histogram() 
+P8 = ggplot(aes(x = total.sulfur.dioxide), data = rw) + geom_histogram()
+P9 = ggplot(aes(x = density), data = rw) + geom_histogram()
+P10 = ggplot(aes(x = pH), data = rw) + geom_histogram()
+
+grid.arrange(P0,P1,P2,P3,P4,P5,P6,P7,P8,P9,P10,ncol=3)
+```
+
+Quality - Most wines are rated 5-6
+
+Sulphates - Distribution seems normal in IQR wih peak at around 0.6
+
+Fixed Acidity - Distribution seems bimodal in IQR with peaks at around 7 and 8
+
+Volatile Acidity - Distribution seems bimodal in IQR with peaks at around 0.4 and 0.6
+
+Citric Acid - Distributions seems slightly positively skewed. A lot of wines have almost no citric acid. There seem to be two peaks at 0 & 0.50
+
+Residual sugar and chlorides - The distribution looks very similar. Residual sugar peak is around 2 and chlorides peak is around 0.08 
+
+Free suphur dioxide - Distributions seems slightly positively skewed with multiple peaks. The tallest peak is around 5
+
+Total suphur dioxide - Distributions seems slightly positively skewed with the peak at around 20
+
+Density - Distribution seems normal in IQR wih peak at around 0.997
+
+pH - Distribution seems normal in IQR wih peak at around 3.35
+
+------
+
+> Bivariate Plots Section
+
+> Since we are primarily concerned about the affect of variables on quality, let us find out how does quality change with the change in attribute values. To do that we will group the data by quality and plot median attribute values against quality for all variables. This is a primary analysis, before we dig deeper into the relevant relationships
+
+## Median chemical attributes by quality
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+byquality <- rw %>%
+  group_by(quality) %>% #group data set by quality
+  summarise(m_fixed.acidity = median(fixed.acidity), #find median values
+            m_sulphates = median(sulphates),
+            m_residual.sugar = median(residual.sugar),
+            m_chlorides = median(chlorides),
+            m_free.sulfur.dioxide = median(free.sulfur.dioxide),
+            m_total.sulfur.dioxide = median(total.sulfur.dioxide),
+            m_density = median(density),
+            m_pH = median(pH),
+            m_alcohol = median(alcohol),
+            m_volatile.acidity = median(volatile.acidity),
+            m_citric.acid = median(citric.acid),
+            n = n()) %>%
+  arrange(quality) ## arrange the data set by quality value
+
+byquality
+```
+
+# Median attributes by quality - Positive Relationship
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+A1 = ggplot(aes(x = quality, y = m_citric.acid), data = byquality) + 
+  geom_line()
+
+A2 = ggplot(aes(x = quality, y = m_fixed.acidity), data = byquality) +
+  geom_line()
+
+A3 = ggplot(aes(x = quality, y = m_alcohol), data = byquality) +
+  geom_line()
+
+A4 = ggplot(aes(x = quality, y = m_sulphates), data = byquality) +
+  geom_line()
+
+grid.arrange(A1,A2,A3,A4,ncol=2)
+
+```
+
+Overall, median citric acid, median fixed acidity, median alcohol percentage and median sulphates increase with the increase in the quality of the red wine 
+
+# Median attributes by quality - Negative Relationship
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+B1 = ggplot(aes(x = quality, y = m_pH), data = byquality) +
+  geom_line()
+
+B2 = ggplot(aes(x = quality, y = m_density), data = byquality) +
+  geom_line()
+
+B3 = ggplot(aes(x = quality, y = m_volatile.acidity), data = byquality) +
+  geom_line()
+
+B4 = ggplot(aes(x = quality, y = m_chlorides), data = byquality) +
+  geom_line()
+
+grid.arrange(B1,B2,B3,B4,ncol=2)
+```
+
+Median pH, median volatile acidity, median density and median chlorides decrease with the increase in the quality of the red wine
+
+# Median attributes by quality - Sulfur Dioxide
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+C1 = ggplot(aes(x = quality, y = m_free.sulfur.dioxide), data = byquality) +
+  geom_line()
+
+C2 = ggplot(aes(x = quality, y = m_total.sulfur.dioxide), data = byquality) +
+  geom_line()
+
+grid.arrange(C1,C2,ncol=2)
+```
+
+The free and total sulfur dioxide follow a similar pattern, with the peak at average wine quality (5) 
+
+> Now let us narrow down the variables with strong correlation, so that they can be studied in more detail
+
+
+## Relationship between all pairs of variables
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+ggcorr(rw[,2:13],nbreaks = 5)
+
+```
+
+Strong correlation between:
+a) Citric acid and Fixed acidity
+b) Free and Total Sulfur dioxide
+c) Density and Fixed acidity
+
+Moderate correlation between quality
+a) Alcohol
+b) Sulphates
+c) Citric Acid
+
+Strong negative correlation between pH and fixed acidity
+
+> Let us look at these relationships more closely
+
+## Histogram colored by quality
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+H1 = ggplot(aes(x = sulphates, fill = dquality), 
+            data = subset(rw, sulphates < quantile(sulphates,.99))) + 
+  geom_histogram() +
+  scale_fill_brewer(type = 'seq')
+H2 = ggplot(aes(x = fixed.acidity, fill = dquality), 
+            data = subset(rw, fixed.acidity < quantile(fixed.acidity,.99))) +
+  geom_histogram() +
+  scale_fill_brewer(type = 'seq')
+H3 = ggplot(aes(x = volatile.acidity, fill = dquality), 
+        data = subset(rw, volatile.acidity < quantile(volatile.acidity,.99))) + 
+  geom_histogram() +
+  scale_fill_brewer(type = 'seq')
+H4 = ggplot(aes(x = citric.acid, fill = dquality), 
+        data = subset(rw, citric.acid < quantile(citric.acid,.99))) +
+  geom_histogram() +
+  scale_fill_brewer(type = 'seq')
+
+grid.arrange(H1,H2,H3,H4,ncol=2)
+```
+
+Excluded top 1% of the values to remove outlier values
+
+Citric Acid histogram is skewed because of several wines having citric acid value as 0
+
+In the histogram for sulphates, fixed acidity and citric acid, the higher quality wines are mostly observed towards the higher values of these variables, while the lower quality wines are mostly observed towards the lower value of these variables
+
+In the histogram of volatile acidity, the opposite is observed. Higher quality wines observed towards lower values of volatile acidity
+
+## Fixed Acidity vs Citric Acid
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+ggplot(aes(x = fixed.acidity, y = citric.acid), 
+       data = subset(rw, fixed.acidity < quantile(fixed.acidity,0.99) & 
+          citric.acid < quantile(citric.acid,0.99))) +
+  geom_jitter(alpha = .2, size = 2) +
+  geom_smooth()
+
+```
+
+There is almost a linear relationship between fixed acidity and the citric acid in the range of 7-11 of fixed acidity
+
+
+## Fixed Acidity vs pH
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+ggplot(aes(x = fixed.acidity, y = pH), data = subset(rw, fixed.acidity < quantile(fixed.acidity,0.99) & pH < quantile(pH,0.99))) +
+  geom_jitter(alpha = .2, size = 2) +
+  geom_smooth()
+
+```
+
+The negative correlation between fixed acidity and pH can be clearly observed in the above plot
+------
+
+> Multivariate Plots Section
+
+
+## Scatter plot of fixed acidity vs pH colored by quality
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+ggplot(aes(x = fixed.acidity, y = pH, color = dquality), 
+       data = subset(rw, fixed.acidity < quantile(fixed.acidity,0.99) & pH < quantile(pH,0.99))) +
+  geom_jitter(alpha = 0.5, size = 2) +
+  scale_color_brewer(type = 'div')
+
+```
+
+pH decreases with increase in fixed acidity
+
+Wine quality increases with fixed acidity and pH value
+
+
+## Scatter plot of free vs total sulfur dioxide colored by quality
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = free.sulfur.dioxide, y = total.sulfur.dioxide, color = dquality),
+       data = rw) + geom_jitter(alpha = 0.5, size = 2) +
+  scale_color_brewer(type = 'div')
+```
+
+Total sulfur dioxide increases with increase in free sulfur dioxide
+
+At any given value of free sulfur dioxide, quality seems higher at lower total sulfur dioxide
+
+------
+
+> Final Plots Section
+
+
+```{r}
+
+
+
+```
+
+
+## Quality vs Mean Attribute Values
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+BoxPlotWithMean = function(x,y) {
+  ggplot(aes(dquality, x), data = rw) +
+  geom_jitter( alpha = .3)  +
+  geom_boxplot( alpha = .5,color = 'blue')+
+  stat_summary(fun.y = "mean", 
+               geom = "point", 
+               color = "red", 
+               shape = 8, 
+               size = 4) +
+    xlab('Quality of red wine') +
+    ylab(y)
+}
+
+BoxPlotWithMean(rw$citric.acid,'Citric Acid (g / dm^3)')
+BoxPlotWithMean(rw$sulphates,'Sulphates (g / dm3)')
+BoxPlotWithMean(rw$alcohol,'Alcohol % by Volume')
+BoxPlotWithMean(rw$volatile.acidity,'Volatile Acidity (g / dm^3)')
+```
+
+Out of all attributes, the above 4 attributes have the most clear affect on quality, which is why I selected them for the final plot
+
+Quality increases with increase in median citric acid, sulphates and alcohol percentage, and it decreases with volatile acidity
+
+
+## Scatter plot - Fixed Acidity vs pH colored by quality
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+ggplot(aes(x = fixed.acidity, y = pH, color = dquality), 
+       data = subset(rw, fixed.acidity < quantile(fixed.acidity,0.99) & pH < 
+       quantile(pH,0.99))) +
+  geom_jitter(alpha = 0.5, size = 2) +
+  geom_smooth(method = "lm", se = FALSE,size=1) +
+  scale_color_brewer(type = 'div') +
+  scale_x_continuous(breaks = seq(0,.8,.1)) +
+  xlab('Fixed Acidity (tartaric acid - g / dm^3)') +
+  ggtitle('Fixed Acidity vs pH colored by quality')
+
+```
+
+Selected this scatter plot to highlight the inverse relationship between fixed acidity and pH value
+
+pH decreases with increase in fixed acidity
+
+Wine quality increases with fixed acidity and pH value
+
+
+## Scatter plot of free vs total sulfur dioxide colored by quality
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+ggplot(aes(x = free.sulfur.dioxide, y = total.sulfur.dioxide, color = dquality),
+       data = subset(rw, free.sulfur.dioxide < quantile(free.sulfur.dioxide,.99)
+       & total.sulfur.dioxide < quantile(total.sulfur.dioxide,.99))) +
+  geom_jitter(alpha = 0.75, size = 2) +
+  geom_smooth(method = "lm", se = FALSE,size=1) +
+  scale_color_brewer(type = 'div') +
+  scale_x_continuous(breaks = seq(0,60,10)) +
+  scale_y_continuous(breaks = seq(0,200,50)) +
+  xlab('Free Sulfur Dioxide (mg / dm^3)') +
+  ylab('Total Sulfur Dioxide (mg / dm^3)') +
+  ggtitle('Free vs Total Sulfur Dioxide colored by Quality')
+
+```
+
+Selected this plot to see the affect of free and total sulfur dioxide on quality
+
+Total sulfur dioxide increases with increase in free sulfur dioxide
+
+------
+
+## Reflection
+
+Observation - 95% of the wines are rated between 5-7 quality. So most of the observations and findings will be applicable to this quality range. We don't have enough observations for the wines with other quality ratings
+
+Insight - Based on the correlation coefficient and the line charts (median attributes vs quality), citric acid, alcohol and sulphates seem to have the most positive affect on quality whereas volatile acidity seems to have the most negative affect on quality
+
+Struggle - Only the output variable, quality ahd limited values and could be converted into a categorical variable. That limited the kind of graphs and charts I could create, since all other variables are continuous 
+
+Surprising - It was surprising to observe that the median sulphates and median sulfur dioxide have a different relationship with quality. While quality increases consistently with increase in median sulphates, quality would first increase and then decrease with increase in sulfur dioxide
+
+Future work - Having more data points for wines rated between 1-4 and wines rated greater than 7, might illuminate some other trends.
